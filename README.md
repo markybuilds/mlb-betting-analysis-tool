@@ -1,215 +1,131 @@
-# MLB Betting Scraper 🏟️⚾
+# MLB FanDuel Prop Betting Analysis Tool
 
-A comprehensive MLB player projections and betting analysis tool that scrapes data from SportsLine and generates detailed reports for informed betting decisions.
+A comprehensive tool for scraping MLB player projections and analyzing optimal FanDuel prop betting opportunities for pitcher strikeouts and batter hits.
 
-## 🚀 Features
+## 📁 Project Structure
 
-- **Real-time Data Scraping**: Automatically scrapes MLB player projections from SportsLine
-- **Comprehensive Analysis**: Generates detailed betting analysis with player comparisons
-- **Multiple Output Formats**: CSV, JSON, Excel, and Markdown reports
-- **Position-Specific Insights**: Tailored analysis for pitchers vs. position players
-- **Automated Scheduling**: Easy setup for regular data updates
-- **Clean Data Structure**: Organized output with timestamped files
+```
+mlb-tool/
+├── 📂 data/                           # Raw scraped data
+│   ├── mlb_player_projections.csv     # Player projections (CSV)
+│   └── mlb_player_projections.json    # Player projections (JSON)
+├── 📂 analysis/                       # Analysis results
+│   ├── pitcher_strikeout_analysis.csv # Pitcher K prop analysis
+│   ├── pitcher_strikeout_analysis.json
+│   ├── batter_hits_analysis.csv       # Batter hits prop analysis
+│   └── batter_hits_analysis.json
+├── 📂 reports/                        # Summary reports (future use)
+├── 📂 .venv/                          # Virtual environment
+├── 📄 mlb_scraper.py                  # Core scraping script
+├── 📄 pitcher_strikeout_analysis.py   # Pitcher K analysis
+├── 📄 batter_hits_analysis.py         # Batter hits analysis
+├── 📄 daily_update.py                 # Automated daily workflow
+├── 📄 analyze_data.py                 # Basic data analysis
+├── 📄 requirements.txt                # Python dependencies
+├── 📄 setup.bat                       # Windows setup script
+└── 📄 README.md                       # This file
+```
+
+## 🚀 Quick Start
+
+### Initial Setup
+1. Run the setup script:
+   ```bash
+   setup.bat
+   ```
+
+### Daily Usage
+1. Run the daily update (recommended):
+   ```bash
+   python daily_update.py
+   ```
+   This will:
+   - Scrape fresh MLB projection data → `data/`
+   - Analyze pitcher strikeout props → `analysis/`
+   - Analyze batter hits props → `analysis/`
+
+### Manual Usage
+1. **Scrape Data:**
+   ```bash
+   python mlb_scraper.py
+   ```
+   Output: `data/mlb_player_projections.csv` and `.json`
+
+2. **Analyze Pitcher Strikeouts:**
+   ```bash
+   python pitcher_strikeout_analysis.py
+   ```
+   Output: `analysis/pitcher_strikeout_analysis.csv` and `.json`
+
+3. **Analyze Batter Hits:**
+   ```bash
+   python batter_hits_analysis.py
+   ```
+   Output: `analysis/batter_hits_analysis.csv` and `.json`
+
+## 📊 Output Files
+
+### Data Files (`data/` folder)
+- **mlb_player_projections.csv**: Raw scraped player projections
+- **mlb_player_projections.json**: Same data in JSON format
+
+### Analysis Files (`analysis/` folder)
+- **pitcher_strikeout_analysis.csv**: Optimal strikeout prop lines with confidence levels
+- **batter_hits_analysis.csv**: Optimal hits prop lines with edge calculations
+- **JSON versions**: Machine-readable formats for programmatic use
+
+## 🎯 Betting Strategy
+
+### Pitcher Strikeouts
+- **High Confidence**: 2+ strikeout edge over alternative line
+- **Medium Confidence**: 1-1.9 strikeout edge
+- **Focus**: Medium/High confidence bets for best ROI
+
+### Batter Hits
+- **Strategy**: Conservative "Over 0.5 Hits" props
+- **Edge-based**: Sort by highest edge percentage
+- **Risk Management**: Use smaller unit sizes (hits are more volatile)
+
+## 🔧 Features
+
+- **Automated Scraping**: Selenium + BeautifulSoup with fallback
+- **Smart Analysis**: Conservative line calculations for higher win rates
+- **Organized Output**: Clean folder structure for easy file management
+- **Error Handling**: Robust error handling and logging
+- **Daily Automation**: Single command for complete daily workflow
+- **Multiple Formats**: CSV for Excel, JSON for programming
 
 ## 📋 Requirements
 
-- Python 3.8+
-- Chrome/Chromium browser (for Selenium)
+- Python 3.7+
+- Chrome browser (for Selenium)
 - Internet connection
+- Dependencies in `requirements.txt`
 
-## 🛠️ Installation
+## ⚠️ Important Notes
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/markybuilds/mlb-betting-scraper.git
-   cd mlb-betting-scraper
-   ```
+1. **Verify Lines**: Always check that suggested lines are available on FanDuel
+2. **Additional Factors**: Consider weather, lineups, matchups, and ballpark factors
+3. **Responsible Betting**: Bet within your limits and bankroll management
+4. **Data Freshness**: Run daily updates for most current projections
+5. **File Organization**: All output files are automatically organized into appropriate folders
 
-2. **Create a virtual environment**:
-   ```bash
-   python -m venv .venv
-   ```
+## 🔄 Daily Workflow
 
-3. **Activate the virtual environment**:
-   - Windows: `.venv\Scripts\activate`
-   - macOS/Linux: `source .venv/bin/activate`
+1. Run `python daily_update.py`
+2. Check `analysis/` folder for new recommendations
+3. Review FanDuel for available lines
+4. Place bets based on confidence levels and edge calculations
+5. Track results and adjust strategy as needed
 
-4. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## 📈 Success Tips
 
-## 🎯 Quick Start
-
-### Basic Usage
-
-Run the main scraper to get today's projections and analysis:
-
-```bash
-python run_scraper.py
-```
-
-This will:
-- Scrape current MLB projections from SportsLine
-- Generate comprehensive betting analysis
-- Save data in multiple formats (CSV, JSON, Excel, Markdown)
-- Create timestamped files for historical tracking
-
-### Output Files
-
-After running, you'll find organized data in the `mlb_data/` directory:
-
-```
-mlb_data/
-├── projections/
-│   ├── projections_YYYYMMDD_HHMMSS.csv
-│   ├── projections_YYYYMMDD_HHMMSS.json
-│   ├── projections_YYYY-MM-DD.xlsx
-│   └── latest_projections.csv
-├── schedule/
-│   ├── schedule_YYYYMMDD_HHMMSS.csv
-│   ├── schedule_YYYYMMDD_HHMMSS.json
-│   ├── schedule_YYYY-MM-DD.xlsx
-│   └── latest_schedule.csv
-└── analysis/
-    ├── betting_analysis_YYYYMMDD_HHMMSS.md
-    └── latest_betting_analysis.md
-```
-
-## 📊 Data Fields
-
-### Player Projections
-- **Batters**: Hits, Runs, RBI, Position
-- **Pitchers**: Innings Pitched, Strikeouts, Earned Runs, Hits Allowed, Walks
-
-### Analysis Metrics
-- Position-specific averages and comparisons
-- Top performers identification
-- Value betting opportunities
-- Risk assessment indicators
-
-## 🔧 Configuration
-
-### Customizing the Scraper
-
-Edit `mlb_scraper_enhanced.py` to modify:
-- Scraping intervals
-- Data processing logic
-- Output formats
-- Analysis parameters
-
-### Advanced Usage
-
-For custom scraping or analysis:
-
-```python
-from mlb_scraper_enhanced import MLBScraper
-
-scraper = MLBScraper()
-data = scraper.scrape_projections()
-analysis = scraper.generate_analysis(data)
-```
-
-## 📈 Analysis Features
-
-### Betting Insights
-- **Value Identification**: Spots players with projections significantly above/below market expectations
-- **Position Comparisons**: Analyzes performance relative to position averages
-- **Risk Assessment**: Identifies high-variance vs. consistent performers
-- **Trend Analysis**: Historical performance patterns
-
-### Report Sections
-1. **Executive Summary**: Key insights and top opportunities
-2. **Top Performers**: Highest projected players by category
-3. **Position Analysis**: Detailed breakdowns by position
-4. **Value Plays**: Potential betting opportunities
-5. **Risk Factors**: Important considerations
-
-## 🤖 Automation
-
-### Scheduled Runs
-
-Set up automated daily runs using:
-
-**Windows (Task Scheduler)**:
-1. Open Task Scheduler
-2. Create Basic Task
-3. Set trigger for daily execution
-4. Action: Start Program → `python run_scraper.py`
-
-**macOS/Linux (Cron)**:
-```bash
-# Run daily at 9 AM
-0 9 * * * /path/to/python /path/to/run_scraper.py
-```
-
-## 🛡️ Error Handling
-
-The scraper includes robust error handling for:
-- Network connectivity issues
-- Website structure changes
-- Data parsing errors
-- File system permissions
-
-## 📝 Logging
-
-Detailed logs are generated for:
-- Scraping progress
-- Data processing steps
-- Error diagnostics
-- Performance metrics
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-1. **Chrome Driver Issues**:
-   - Ensure Chrome is installed and up-to-date
-   - Check ChromeDriver compatibility
-
-2. **Scraping Failures**:
-   - Verify internet connection
-   - Check if SportsLine website structure changed
-   - Review error logs for specific issues
-
-3. **Data Processing Errors**:
-   - Ensure all dependencies are installed
-   - Check file permissions in output directory
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## ⚠️ Disclaimer
-
-**Important**: This tool is for informational and educational purposes only. 
-
-- **Not Financial Advice**: The analysis and projections provided are not financial or betting advice
-- **Use Responsibly**: Always conduct your own research and bet responsibly
-- **Risk Awareness**: Sports betting involves risk of loss
-- **Legal Compliance**: Ensure sports betting is legal in your jurisdiction
-- **Data Accuracy**: While we strive for accuracy, always verify data independently
-
-## 🎯 Next Steps
-
-After installation:
-
-1. **Run Initial Test**: Execute `python run_scraper.py` to verify setup
-2. **Review Output**: Check generated files in `mlb_data/` directory
-3. **Customize Analysis**: Modify parameters based on your betting strategy
-4. **Set Up Automation**: Configure scheduled runs for regular updates
-5. **Monitor Performance**: Track accuracy and adjust as needed
+- Focus on high-confidence pitcher strikeout props
+- Use smaller units for hits props due to higher variance
+- Track your results to refine the strategy
+- Consider line shopping across multiple sportsbooks
+- Stay updated with MLB news that might affect projections
 
 ---
 
-**Happy Betting! 🎲⚾**
-
-Remember: The house always has an edge, but informed decisions can improve your odds. Use this tool as part of a comprehensive research strategy, never as your sole decision-making factor.
+*This tool is for educational and analytical purposes. Always gamble responsibly.*
