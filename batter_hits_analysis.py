@@ -50,36 +50,33 @@ class BatterHitsAnalysis:
         for _, batter in self.batter_data.iterrows():
             h_projection = batter['H_numeric']
             
-            # Calculate optimal alt line based on projection
-            # Strategy: Take alt line that's 0.5-1.0 hits below projection
-            # but not more than 20% below the projection to avoid being too conservative
+            # For FanDuel "at least 1 hit" bets, we compare projection to 1.0
+            # If projection > 1.0, it's a good bet. The higher above 1.0, the better.
             
-            min_reduction = 0.5
-            max_reduction = min(1.0, h_projection * 0.20)  # Max 20% reduction
+            # Standard alt line for "at least 1 hit" prop
+            standard_alt_line = 1.0
             
-            # Calculate the optimal alt line (round down to nearest 0.5)
-            optimal_reduction = min(max_reduction, max(min_reduction, h_projection * 0.12))
-            optimal_alt_line = h_projection - optimal_reduction
+            # Calculate edge (how much above 1.0 the projection is)
+            edge = h_projection - standard_alt_line
+            edge_percentage = (edge / standard_alt_line) * 100 if standard_alt_line > 0 else 0
             
-            # Round to nearest 0.5 (common FanDuel increment)
-            optimal_alt_line = math.floor(optimal_alt_line * 2) / 2
-            
-            # Ensure we don't go below 0.5 hits (minimum reasonable prop)
-            optimal_alt_line = max(0.5, optimal_alt_line)
-            
-            # Calculate edge (how much above the alt line the projection is)
-            edge = h_projection - optimal_alt_line
-            edge_percentage = (edge / optimal_alt_line) * 100
-            
-            # Determine confidence level based on edge
-            if edge >= 1.5:
+            # Determine confidence level based on how much projection exceeds 1.0
+            if h_projection >= 1.5:  # 50%+ edge over 1.0
                 confidence = "High"
-            elif edge >= 0.8:
-                confidence = "Medium"
-            elif edge >= 0.4:
+                optimal_alt_line = 1.0
+            elif h_projection >= 1.3:  # 30%+ edge over 1.0
+                confidence = "Medium" 
+                optimal_alt_line = 1.0
+            elif h_projection >= 1.1:  # 10%+ edge over 1.0
                 confidence = "Low"
-            else:
+                optimal_alt_line = 1.0
+            else:  # Projection below 1.1
                 confidence = "Avoid"
+                # For avoid cases, calculate what alt line would make sense
+                optimal_alt_line = math.floor(h_projection * 2) / 2
+                optimal_alt_line = max(0.5, optimal_alt_line)
+                edge = h_projection - optimal_alt_line
+                edge_percentage = (edge / optimal_alt_line) * 100 if optimal_alt_line > 0 else 0
             
             analysis_results.append({
                 'PLAYER': batter['PLAYER'],

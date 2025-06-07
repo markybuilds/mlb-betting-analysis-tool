@@ -58,25 +58,25 @@ def main():
     # Step 1: Scrape fresh data
     if run_script('mlb_scraper.py', 'Scraping Fresh MLB Projection Data'):
         success_count += 1
-        print("✓ Data scraping completed successfully")
+        print("[SUCCESS] Data scraping completed successfully")
     else:
-        print("✗ Data scraping failed")
+        print("[ERROR] Data scraping failed")
         print("\nTrying to continue with existing data...")
     
     # Step 2: Generate pitcher analysis
     if run_script('pitcher_strikeout_analysis.py', 'Analyzing Pitcher Strikeout Props'):
         success_count += 1
-        print("✓ Pitcher analysis completed successfully")
+        print("[SUCCESS] Pitcher analysis completed successfully")
     else:
-        print("✗ Pitcher analysis failed")
+        print("[ERROR] Pitcher analysis failed")
         print("\nContinuing with batter analysis...")
     
     # Step 3: Generate batter analysis
     if run_script('batter_hits_analysis.py', 'Analyzing Batter Hits Props'):
         success_count += 1
-        print("✓ Batter analysis completed successfully")
+        print("[SUCCESS] Batter analysis completed successfully")
     else:
-        print("✗ Batter analysis failed")
+        print("[ERROR] Batter analysis failed")
         return False
     
     # Summary
@@ -86,7 +86,7 @@ def main():
     print(f"Completed: {success_count}/{total_steps} steps")
     
     if success_count >= 2:  # At least scraping + one analysis
-        print("\n🎉 SUCCESS! Your betting analysis is up to date.")
+        print("\n[SUCCESS] Your betting analysis is up to date.")
         print("\nGenerated files:")
         print("- data/mlb_player_projections.csv (Raw projection data)")
         print("- data/mlb_player_projections.json (Raw projection data - JSON)")
@@ -101,13 +101,13 @@ def main():
             print("- analysis/batter_hits_analysis.csv (Detailed analysis)")
             print("- analysis/batter_hits_analysis.json (JSON format)")
         
-        print("\n📊 Next steps:")
+        print("\nNext steps:")
         print("1. Review betting recommendations in the summary files")
         print("2. Check FanDuel for current lines and odds")
         print("3. Focus on Medium/High Confidence strikeout props")
         print("4. Consider top edge percentage hits props with smaller units")
         
-        print("\n⚠️  Remember:")
+        print("\nRemember:")
         print("- Always verify lines are still available on FanDuel")
         print("- Consider additional factors (weather, lineups, matchups)")
         print("- Hits props are more volatile - use smaller unit sizes")
@@ -115,7 +115,7 @@ def main():
         
         return True
     else:
-        print("\n❌ Some steps failed. Check the error messages above.")
+        print("\n[ERROR] Some steps failed. Check the error messages above.")
         return False
 
 if __name__ == "__main__":
