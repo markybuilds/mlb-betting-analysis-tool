@@ -48,10 +48,28 @@ interface PitcherAnalysis {
   RECOMMENDATION: string
 }
 
+interface HitsRunsRBIsAnalysis {
+  PLAYER: string
+  TEAM: string
+  GAME: string
+  POS: string
+  H_PROJECTION: number
+  R_PROJECTION: number
+  RBI_PROJECTION: number
+  HRR_PROJECTION: number
+  OPTIMAL_LINE: number
+  OVER_PROBABILITY: number
+  EDGE: number
+  EDGE_PERCENTAGE: number
+  CONFIDENCE: string
+  RECOMMENDATION: string
+}
+
 export default function MLBDashboard() {
   const [playerProjections, setPlayerProjections] = useState<PlayerProjection[]>([])
   const [batterAnalysis, setBatterAnalysis] = useState<BatterAnalysis[]>([])
   const [pitcherAnalysis, setPitcherAnalysis] = useState<PitcherAnalysis[]>([])
+  const [hitsRunsRBIsAnalysis, setHitsRunsRBIsAnalysis] = useState<HitsRunsRBIsAnalysis[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string>('')
@@ -79,6 +97,13 @@ export default function MLBDashboard() {
       if (pitcherResponse.ok) {
         const pitchers = await pitcherResponse.json()
         setPitcherAnalysis(pitchers)
+      }
+
+      // Load hits + runs + RBIs analysis
+      const hrrResponse = await fetch('/api/data/hits-runs-rbis-analysis')
+      if (hrrResponse.ok) {
+        const hrr = await hrrResponse.json()
+        setHitsRunsRBIsAnalysis(hrr)
       }
 
       setLastUpdated(new Date().toLocaleString())
@@ -126,7 +151,8 @@ export default function MLBDashboard() {
   const allGames = Array.from(new Set([
     ...playerProjections.map(p => p.GAME),
     ...batterAnalysis.map(b => b.GAME),
-    ...pitcherAnalysis.map(p => p.GAME)
+    ...pitcherAnalysis.map(p => p.GAME),
+    ...hitsRunsRBIsAnalysis.map(h => h.GAME)
   ])).filter(game => game && game !== '-').sort()
 
   // Filter data based on selected games
@@ -142,11 +168,15 @@ export default function MLBDashboard() {
     ? pitcherAnalysis 
     : pitcherAnalysis.filter(p => selectedGames.includes(p.GAME))
 
+  const filteredHitsRunsRBIsAnalysis = selectedGames.length === 0 
+    ? hitsRunsRBIsAnalysis 
+    : hitsRunsRBIsAnalysis.filter(h => selectedGames.includes(h.GAME))
+
   const topBatterOpportunities = filteredBatterAnalysis
     .filter(b => b.EDGE_PERCENTAGE > 0)
     .sort((a, b) => {
       // First sort by confidence level (recommended bets first)
-      const confidenceOrder = { 'High': 3, 'Medium': 2, 'Low': 1, 'Avoid': 0 }
+      const confidenceOrder: Record<string, number> = { 'High': 3, 'Medium': 2, 'Low': 1, 'Avoid': 0 }
       const confidenceDiff = (confidenceOrder[b.CONFIDENCE] || 0) - (confidenceOrder[a.CONFIDENCE] || 0)
       if (confidenceDiff !== 0) return confidenceDiff
       
@@ -158,6 +188,20 @@ export default function MLBDashboard() {
   const topPitcherOpportunities = filteredPitcherAnalysis
     .filter(p => p.CONFIDENCE === 'High' || p.CONFIDENCE === 'Medium')
     .sort((a, b) => b.EDGE_PERCENTAGE - a.EDGE_PERCENTAGE)
+    .slice(0, 5)
+
+  const topHitsRunsRBIsOpportunities = filteredHitsRunsRBIsAnalysis
+    .filter(h => h.EDGE_PERCENTAGE > 0)
+    .sort((a, b) => {
+      // First sort by confidence level (recommended bets first)
+      const confidenceOrder: Record<string, number> = { 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1, 'AVOID': 0 }
+      const confidenceDiff = (confidenceOrder[b.CONFIDENCE] || 0) - (confidenceOrder[a.CONFIDENCE] || 0)
+      
+      if (confidenceDiff !== 0) return confidenceDiff
+      
+      // Then sort by edge percentage within same confidence level
+      return b.EDGE_PERCENTAGE - a.EDGE_PERCENTAGE
+    })
     .slice(0, 5)
 
   const handleGameFilterChange = (game: string) => {
@@ -300,11 +344,11 @@ export default function MLBDashboard() {
           
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-200">Pitcher Opportunities</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-200">2+ HHR Opportunities</CardTitle>
               <TrendingUp className="h-4 w-4 text-slate-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{filteredPitcherAnalysis.length}</div>
+              <div className="text-2xl font-bold text-white">{filteredHitsRunsRBIsAnalysis.length}</div>
             </CardContent>
           </Card>
           
@@ -315,7 +359,7 @@ export default function MLBDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">
-                {[...filteredBatterAnalysis, ...filteredPitcherAnalysis].filter(item => item.CONFIDENCE === 'High').length}
+                {[...filteredBatterAnalysis, ...filteredPitcherAnalysis, ...filteredHitsRunsRBIsAnalysis].filter(item => item.CONFIDENCE === 'High' || item.CONFIDENCE === 'HIGH').length}
               </div>
             </CardContent>
           </Card>
@@ -323,7 +367,7 @@ export default function MLBDashboard() {
 
         {/* Main Content */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-800/50 border-slate-700">
+          <TabsList className="grid w-full grid-cols-5 bg-slate-800/50 border-slate-700">
             <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-slate-300">
               Overview
             </TabsTrigger>
@@ -336,11 +380,14 @@ export default function MLBDashboard() {
             <TabsTrigger value="pitchers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-slate-300">
               Pitcher Analysis
             </TabsTrigger>
+            <TabsTrigger value="hits-runs-rbis" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-slate-300">
+              2+ HHR Analysis
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Top Batter Opportunities */}
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
@@ -374,6 +421,47 @@ export default function MLBDashboard() {
                           </Badge>
                           <p className="text-sm text-green-400 mt-1">
                             {formatPercentage(batter.EDGE_PERCENTAGE)} edge
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Top H+R+RBI Opportunities */}
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Top 2+ HHR Opportunities</CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Best combined hits, runs, and RBIs betting opportunities
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {topHitsRunsRBIsOpportunities.map((player, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium text-white">{player.PLAYER}</p>
+                          <p className="text-sm text-slate-400">{player.TEAM} - {player.GAME}</p>
+                          <div className="flex gap-2 mt-1">
+                            <Badge className={cn(
+                              "text-xs",
+                              getRecommendationColor(player.RECOMMENDATION)
+                            )}>
+                              {player.RECOMMENDATION}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs text-slate-300 border-slate-500">
+                              {formatDecimal(player.HRR_PROJECTION)} HHR
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge className={getConfidenceBadgeColor(player.CONFIDENCE)}>
+                            {player.CONFIDENCE}
+                          </Badge>
+                          <p className="text-sm text-green-400 mt-1">
+                            {formatPercentage(player.EDGE_PERCENTAGE)} edge
                           </p>
                         </div>
                       </div>
@@ -510,7 +598,7 @@ export default function MLBDashboard() {
                       {filteredBatterAnalysis
                         .sort((a, b) => {
                           // First sort by confidence level (recommended bets first)
-                          const confidenceOrder = { 'High': 3, 'Medium': 2, 'Low': 1, 'Avoid': 0 }
+                          const confidenceOrder: Record<string, number> = { 'High': 3, 'Medium': 2, 'Low': 1, 'Avoid': 0 }
                           const confidenceDiff = (confidenceOrder[b.CONFIDENCE] || 0) - (confidenceOrder[a.CONFIDENCE] || 0)
                           if (confidenceDiff !== 0) return confidenceDiff
                           
@@ -588,6 +676,59 @@ export default function MLBDashboard() {
                           <td className="p-2">
                             <Badge className={getRecommendationColor(pitcher.RECOMMENDATION)}>
                               {pitcher.RECOMMENDATION}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="hits-runs-rbis" className="space-y-6">
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Hits + Runs + RBIs Analysis</CardTitle>
+                <CardDescription className="text-slate-400">
+                  Combined analysis of hits, runs, and RBIs betting opportunities
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-700">
+                        <th className="text-left p-2 text-slate-300">Player</th>
+                        <th className="text-left p-2 text-slate-300">Team</th>
+                        <th className="text-left p-2 text-slate-300">Game</th>
+                        <th className="text-left p-2 text-slate-300">HHR Proj</th>
+                        <th className="text-left p-2 text-slate-300">Line</th>
+                        <th className="text-left p-2 text-slate-300">Edge</th>
+                        <th className="text-left p-2 text-slate-300">Edge %</th>
+                        <th className="text-left p-2 text-slate-300">Confidence</th>
+                        <th className="text-left p-2 text-slate-300">Recommendation</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredHitsRunsRBIsAnalysis.map((player, index) => (
+                        <tr key={index} className="border-b border-slate-700/50 hover:bg-slate-700/25">
+                          <td className="p-2 text-white font-medium">{player.PLAYER}</td>
+                          <td className="p-2 text-slate-300">{player.TEAM}</td>
+                          <td className="p-2 text-slate-300">{player.GAME}</td>
+                          <td className="p-2 text-slate-300">{formatDecimal(player.HRR_PROJECTION)}</td>
+                          <td className="p-2 text-slate-300">{formatDecimal(player.OPTIMAL_LINE)}</td>
+                          <td className="p-2 text-slate-300">{formatDecimal(player.EDGE)}</td>
+                          <td className="p-2 text-green-400">{formatPercentage(player.EDGE_PERCENTAGE)}</td>
+                          <td className="p-2">
+                            <Badge className={getConfidenceBadgeColor(player.CONFIDENCE)}>
+                              {player.CONFIDENCE}
+                            </Badge>
+                          </td>
+                          <td className="p-2">
+                            <Badge className={getRecommendationColor(player.RECOMMENDATION)}>
+                              {player.RECOMMENDATION}
                             </Badge>
                           </td>
                         </tr>
