@@ -41,10 +41,10 @@ def main():
     """Main function to run daily update"""
     print(f"MLB Daily Betting Analysis Update - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("\nThis will update your MLB prop betting analysis with fresh data.")
-    print("Includes: Pitcher Strikeouts & Batter Hits")
+    print("Includes: Pitcher Strikeouts, Batter Hits & 2+ HHR Analysis")
     
     # Check if we're in the right directory
-    required_files = ['mlb_scraper.py', 'pitcher_strikeout_analysis.py', 'batter_hits_analysis.py']
+    required_files = ['mlb_scraper.py', 'pitcher_strikeout_analysis.py', 'batter_hits_analysis.py', 'hits_runs_rbis_analysis.py']
     missing_files = [f for f in required_files if not os.path.exists(f)]
     
     if missing_files:
@@ -53,7 +53,7 @@ def main():
         return False
     
     success_count = 0
-    total_steps = 3
+    total_steps = 4
     
     # Step 1: Scrape fresh data
     if run_script('mlb_scraper.py', 'Scraping Fresh MLB Projection Data'):
@@ -77,6 +77,14 @@ def main():
         print("[SUCCESS] Batter analysis completed successfully")
     else:
         print("[ERROR] Batter analysis failed")
+        print("\nContinuing with 2+ HHR analysis...")
+    
+    # Step 4: Generate 2+ HHR analysis
+    if run_script('hits_runs_rbis_analysis.py', 'Analyzing 2+ Hits+Runs+RBIs Props'):
+        success_count += 1
+        print("[SUCCESS] 2+ HHR analysis completed successfully")
+    else:
+        print("[ERROR] 2+ HHR analysis failed")
         return False
     
     # Summary
@@ -96,21 +104,28 @@ def main():
             print("- analysis/pitcher_strikeout_analysis.csv (Detailed analysis)")
             print("- analysis/pitcher_strikeout_analysis.json (JSON format)")
         
-        if success_count == 3:
+        if success_count >= 3:
             print("\nBATTER HITS ANALYSIS:")
             print("- analysis/batter_hits_analysis.csv (Detailed analysis)")
             print("- analysis/batter_hits_analysis.json (JSON format)")
+        
+        if success_count == 4:
+            print("\n2+ HHR ANALYSIS:")
+            print("- analysis/hits_runs_rbis_analysis.csv (Detailed analysis)")
+            print("- analysis/hits_runs_rbis_analysis.json (JSON format)")
         
         print("\nNext steps:")
         print("1. Review betting recommendations in the summary files")
         print("2. Check FanDuel for current lines and odds")
         print("3. Focus on Medium/High Confidence strikeout props")
         print("4. Consider top edge percentage hits props with smaller units")
+        print("5. Review 2+ HHR analysis for combination prop opportunities")
         
         print("\nRemember:")
         print("- Always verify lines are still available on FanDuel")
         print("- Consider additional factors (weather, lineups, matchups)")
         print("- Hits props are more volatile - use smaller unit sizes")
+        print("- 2+ HHR props offer higher payouts but require more precision")
         print("- Bet responsibly and within your limits")
         
         return True
